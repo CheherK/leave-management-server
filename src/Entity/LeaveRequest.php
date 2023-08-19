@@ -8,36 +8,77 @@ use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
 use Carbon\Carbon;
 use Gedmo\Mapping\Annotation as Gedmo;
-
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use App\State\LeaveRequestCreationProcessor;
+use App\State\LeaveRequestUpdateProcessor;
+use Symfony\Component\Serializer\Annotation\Groups;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 
 #[ORM\Entity(repositoryClass: LeaveRequestRepository::class)]
-#[ApiResource(formats: ['json'])]
+#[
+    ApiResource(
+        formats: ['json'],
+        operations: [
+            new Get(),
+            new GetCollection(
+                normalizationContext: [
+                    'groups' => ['leaveRequest:readAll'],
+                ]
+            ),
+            new Post(processor: LeaveRequestCreationProcessor::class),
+            new Put(processor: LeaveRequestUpdateProcessor::class),
+            new Patch(),
+            new Delete(),
+        ],
+        normalizationContext: [
+            'groups' => ['leaveRequest:read'],
+        ]
+    ),
+    ApiFilter(SearchFilter::class, properties: ['status' => 'exact', 'priority' => 'exact', 'empolyee' => 'exact'])
+]
 class LeaveRequest
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['leaveRequest:read', 'leaveRequest:readAll'])]
     private ?int $id = null;
 
+    #[Groups(['leaveRequest:read', 'leaveRequest:readAll'])]
     #[ORM\ManyToOne(inversedBy: 'leaveRequests')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $empolyee = null;
 
+    #[Groups(['leaveRequest:read', 'leaveRequest:readAll'])]
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     #[Gedmo\Timestampable(on: "create")]
     private ?\DateTimeInterface $createdAt = null;
 
+    #[Groups(['leaveRequest:read', 'leaveRequest:readAll'])]
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     private ?\DateTimeInterface $startDate = null;
 
+    #[Groups(['leaveRequest:read', 'leaveRequest:readAll'])]
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     private ?\DateTimeInterface $endDate = null;
 
+    #[Groups(['leaveRequest:read', 'leaveRequest:readAll'])]
     #[ORM\Column(length: 255)]
     private ?string $status = 'pending';
 
+    #[Groups(['leaveRequest:read', 'leaveRequest:readAll'])]
     #[ORM\Column(length: 255)]
     private ?string $reason = null;
+
+    #[ORM\Column]
+    #[Groups(['leaveRequest:read', 'leaveRequest:readAll'])]
+    private ?int $priority = null;
 
     public function getId(): ?int
     {
@@ -56,9 +97,9 @@ class LeaveRequest
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeInterface
+    public function getCreatedAt(): string
     {
-        return $this->createdAt;
+        return Carbon::instance($this->createdAt)->format('d-m-Y');
     }
 
     /**
@@ -69,9 +110,9 @@ class LeaveRequest
         return Carbon::instance($this->createdAt)->diffForHumans();
     }
 
-    public function getStartDate(): ?\DateTimeInterface
+    public function getStartDate(): string
     {
-        return $this->startDate;
+        return Carbon::instance($this->startDate)->format('d-m-Y');
     }
 
     public function setStartDate(\DateTimeInterface $startDate): static
@@ -81,9 +122,9 @@ class LeaveRequest
         return $this;
     }
 
-    public function getEndDate(): ?\DateTimeInterface
+    public function getEndDate(): string
     {
-        return $this->endDate;
+        return Carbon::instance($this->endDate)->format('d-m-Y');
     }
 
     public function setEndDate(\DateTimeInterface $endDate): static
@@ -113,6 +154,18 @@ class LeaveRequest
     public function setReason(string $reason): static
     {
         $this->reason = $reason;
+
+        return $this;
+    }
+
+    public function getPriority(): ?int
+    {
+        return $this->priority;
+    }
+
+    public function setPriority(int $priority): static
+    {
+        $this->priority = $priority;
 
         return $this;
     }

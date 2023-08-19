@@ -11,13 +11,15 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use ApiPlatform\Metadata\ApiResource;
-use App\State\HashingUserPasswordProcessor;
+use App\State\UserCreationProcessor;
+use App\State\UserUpdateProcessor;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use Carbon\Carbon;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
@@ -26,9 +28,11 @@ use Symfony\Component\Serializer\Annotation\Groups;
     formats: ['json'],
     operations: [
         new Get(),
-        new GetCollection(),
-        new Post(processor: HashingUserPasswordProcessor::class),
-        new Put(),
+        new GetCollection(
+            normalizationContext: ['groups' => ['user:readAll'],]
+        ),
+        new Post(processor: UserCreationProcessor::class),
+        new Put(processor: UserUpdateProcessor::class),
         new Patch(),
         new Delete(),
     ],
@@ -42,27 +46,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:readAll', 'leaveRequest:readAll'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:readAll', 'leaveRequest:readAll'])]
     private ?string $firstName = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:readAll', 'leaveRequest:readAll'])]
     private ?string $lastName = null;
 
     #[ORM\Column]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:readAll'])]
     private ?int $phone = null;
 
     #[ORM\Column(type: 'string', length: 255, unique: true)]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:readAll'])]
     private ?string $email = null;
 
     #[ORM\Column]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:readAll'])]
     private ?bool $isActive = null;
 
     #[ORM\Column(type: 'json')]
@@ -70,19 +74,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private array $roles = [];
 
     #[ORM\Column(length: 255)]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:readAll'])]
     private ?string $jobTitle = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:readAll'])]
     private ?\DateTimeInterface $birthday = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:readAll'])]
     private ?int $childNumber = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:readAll'])]
     private ?string $familySituation = null;
 
     #[ORM\OneToMany(mappedBy: 'empolyee', targetEntity: LeaveRequest::class)]
@@ -93,38 +97,38 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:readAll'])]
     private ?int $leaveBalance = null;
 
     #[ORM\Column(length: 255)]
     #[ORM\JoinColumn(nullable: true)]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:readAll'])]
     private ?string $rib = null;
     
     #[ORM\Column(length: 255)]
     #[ORM\JoinColumn(nullable: true)]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:readAll'])]
     private ?string $bank = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:readAll'])]
     private ?string $type = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:readAll'])]
     private ?\DateTimeInterface $contractStartDate = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:readAll'])]
     private ?\DateTimeInterface $contractEndDate = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['user:read'])]
+    #[Groups(['user:read', 'user:readAll'])]
     private ?float $salary = null;
 
     #[ORM\Column(type: 'boolean')]
     #[Groups(['user:read'])]
-    private $isVerified = false;
+    private ?bool $isFirstLogin = true;
 
     public function __construct()
     {
@@ -272,9 +276,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getBirthday(): ?\DateTimeInterface
+    public function getBirthday(): string
     {
-        return $this->birthday;
+        return Carbon::instance($this->birthday)->format('d-m-Y');
     }
 
     public function setBirthday(\DateTimeInterface $birthday): static
@@ -329,7 +333,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeLeaveRequest(LeaveRequest $leaveRequest): static
     {
         if ($this->leaveRequests->removeElement($leaveRequest)) {
-            // set the owning side to null (unless already changed)
             if ($leaveRequest->getEmpolyee() === $this) {
                 $leaveRequest->setEmpolyee(null);
             }
@@ -384,9 +387,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getContractStartDate(): ?\DateTimeInterface
+    public function getContractStartDate(): string
     {
-        return $this->contractStartDate;
+        return Carbon::instance($this->contractStartDate)->format('d-m-Y');
     }
 
     public function setContractStartDate(\DateTimeInterface $contractStartDate): static
@@ -396,9 +399,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getContractEndDate(): ?\DateTimeInterface
+    public function getContractEndDate(): string
     {
-        return $this->contractEndDate;
+        return Carbon::instance($this->contractStartDate)->format('d-m-Y');
     }
 
     public function setContractEndDate(\DateTimeInterface $contractEndDate): static
@@ -420,14 +423,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function isVerified(): bool
+    public function isIsFirstLogin(): ?bool
     {
-        return $this->isVerified;
+        return $this->isFirstLogin;
     }
 
-    public function setIsVerified(bool $isVerified): static
+    public function setIsFirstLogin(bool $isFirstLogin): static
     {
-        $this->isVerified = $isVerified;
+        $this->isFirstLogin = $isFirstLogin;
 
         return $this;
     }

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>Demande de Congé réfusée</title>
+		<style>
+			body {
+				font-family: 'Helvetica Neue', Arial, sans-serif;
+				margin: 0;
+				padding: 0;
+				background-color: #f2f2f2;
+				color: #333;
+			}
+
+			.container {
+				max-width: 600px;
+				margin: 20px auto;
+				padding: 20px;
+				background-color: #fff;
+				border-radius: 8px;
+				box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+			}
+
+			h2 {
+				color: #e74c3c;
+				margin-bottom: 10px;
+			}
+
+			p {
+				margin-bottom: 12px;
+			}
+
+			ul {
+				list-style: none;
+				padding-left: 0;
+				margin-bottom: 16px;
+			}
+
+			li {
+				margin-bottom: 6px;
+			}
+
+			strong {
+				font-weight: 600;
+			}
+
+			.footer {
+				margin-top: 20px;
+				color: #888;
+				font-size: 14px;
+				border-top: 1px solid #ddd;
+				padding-top: 12px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="container">
+			<h2>Demande de Congé Refusée</h2>
+			<p>Bonjour
+				<strong>{{ user.firstName }},</strong>
+			</p>
+
+			<p>Nous regrettons de vous informer que votre demande de congé a été refusée.</p>
+
+			<p>Détails de la demande :</p>
+			<ul>
+				<li>
+					<strong>Date de début :</strong>
+					{{ leaveRequest.startDate|date("d/m/Y") }}</li>
+				<li>
+					<strong>Date de fin :</strong>
+					{{ leaveRequest.endDate|date("d/m/Y") }}</li>
+				<li>
+					<strong>Raison :</strong>
+					{{ leaveRequest.reason }}</li>
+			</ul>
+
+			<p>Merci de contacter l'équipe de gestion des congés pour plus d'informations.</p>
+
+			<div class="footer">
+				<p>Cordialement,</p>
+				<p>L'équipe de gestion des congés</p>
+			</div>
+		</div>
+	</body>
+
+</html>

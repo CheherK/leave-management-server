@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>Nouvelle demande</title>
+		<style>
+			body {
+				font-family: 'Helvetica Neue', Arial, sans-serif;
+				margin: 0;
+				padding: 0;
+				background-color: #f4f4f4;
+			}
+
+			.container {
+				max-width: 600px;
+				margin: 0 auto;
+				padding: 20px;
+				background-color: #ffffff;
+				border-radius: 8px;
+				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+			}
+
+			h2 {
+				color: #333;
+				margin-bottom: 20px;
+			}
+
+			p {
+				color: #555;
+				line-height: 1.6;
+				margin-bottom: 10px;
+			}
+
+			ul {
+				list-style: none;
+				padding: 0;
+				margin: 0;
+			}
+
+			li {
+				margin-bottom: 10px;
+			}
+
+			strong {
+				color: #333;
+			}
+
+			.footer {
+				margin-top: 20px;
+				color: #888;
+				font-size: 14px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="container">
+			<h2>Nouvelle demande de congé</h2>
+			<p>Bonjour,</p>
+			<p>Une nouvelle demande de congé a été soumise.</p>
+
+			<p>Détails de la demande :</p>
+			<ul>
+				<li>
+					<strong>Demandeur :</strong>
+					{{ user.firstName }}
+					{{ user.lastName }}</li>
+				<li>
+					<strong>Date de début :</strong>
+					{{ leaveRequest.startDate|date("d/m/Y") }}</li>
+				<li>
+					<strong>Date de fin :</strong>
+					{{ leaveRequest.endDate|date("d/m/Y") }}</li>
+				<li>
+					<strong>Raison :</strong>
+					{{ leaveRequest.reason }}</li>
+			</ul>
+
+			<p>Merci de prendre les mesures nécessaires.</p>
+
+			<div class="footer">
+				<p>Cordialement,</p>
+				<p>L'équipe de gestion des congés</p>
+			</div>
+		</div>
+	</body>
+
+</html>
