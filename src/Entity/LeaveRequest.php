@@ -40,7 +40,16 @@ use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
             'groups' => ['leaveRequest:read'],
         ]
     ),
-    ApiFilter(SearchFilter::class, properties: ['status' => 'exact', 'priority' => 'exact', 'empolyee' => 'exact'])
+    ApiFilter(
+        SearchFilter::class,
+        properties: [
+            'status' => 'exact',
+            'priority' => 'exact',
+            'empolyee' => 'exact',
+            'startDate' => 'range',
+            'endDate' => 'range',
+        ]
+    )
 ]
 class LeaveRequest
 {

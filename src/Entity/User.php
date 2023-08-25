@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiFilter;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -21,25 +22,28 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use Carbon\Carbon;
 use Symfony\Component\Serializer\Annotation\Groups;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
-#[ApiResource(
-    formats: ['json'],
-    operations: [
-        new Get(),
-        new GetCollection(
-            normalizationContext: ['groups' => ['user:readAll'],]
-        ),
-        new Post(processor: UserCreationProcessor::class),
-        new Put(processor: UserUpdateProcessor::class),
-        new Patch(),
-        new Delete(),
-    ],
-    normalizationContext: [
-        'groups' => ['user:read'],
-    ]
-)]
+#[
+    ApiResource(
+        formats: ['json'],
+        operations: [
+            new Get(),
+            new GetCollection(
+                normalizationContext: ['groups' => ['user:readAll']]
+            ),
+            new Post(processor: UserCreationProcessor::class),
+            new Put(processor: UserUpdateProcessor::class),
+            new Patch(),
+            new Delete(),
+        ],
+        normalizationContext: [
+            'groups' => ['user:read'],
+        ]
+    )
+]
 #[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
@@ -104,7 +108,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\JoinColumn(nullable: true)]
     #[Groups(['user:read', 'user:readAll'])]
     private ?string $rib = null;
-    
+
     #[ORM\Column(length: 255)]
     #[ORM\JoinColumn(nullable: true)]
     #[Groups(['user:read', 'user:readAll'])]
@@ -129,6 +133,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'boolean')]
     #[Groups(['user:read'])]
     private ?bool $isFirstLogin = true;
+
+    #[Groups(['user:read', 'user:readAll'])]
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $adress = null;
 
     public function __construct()
     {
@@ -431,6 +439,35 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setIsFirstLogin(bool $isFirstLogin): static
     {
         $this->isFirstLogin = $isFirstLogin;
+
+        return $this;
+    }
+
+    #[Groups(['user:read', 'user:readAll'])]
+    public function isOnLeave(): bool
+    {
+        $today = new \DateTime();
+        $todayFormatted = $today->format('d-m-Y');
+        foreach ($this->leaveRequests as $leaveRequest) {
+            if (
+                $leaveRequest->getStatus() === 'accepted' &&
+                $leaveRequest->getStartDate() <= $todayFormatted &&
+                $leaveRequest->getEndDate() >= $todayFormatted
+            ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function getAdress(): ?string
+    {
+        return $this->adress;
+    }
+
+    public function setAdress(?string $adress): static
+    {
+        $this->adress = $adress;
 
         return $this;
     }

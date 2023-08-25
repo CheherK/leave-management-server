@@ -50,6 +50,29 @@ class LeaveRequestCreationProcessor implements ProcessorInterface
             if ($priority == 0) //request from RH will be accepted automatically
             {
                 $data->setStatus('accepted');
+                //update the user leave balance
+                $submitter = $data->getEmpolyee();
+                $leaveBalance = $submitter->getLeaveBalance();
+
+                $startDateString = $data->getStartDate();
+                $endDateString = $data->getEndDate();
+
+                // Convert the start and end date strings to DateTime objects
+                $startDate = \DateTime::createFromFormat('d-m-Y', $startDateString);
+                $endDate = \DateTime::createFromFormat('d-m-Y', $endDateString);
+
+                $dateInterval = $startDate->diff($endDate);
+                $numberOfDays = $dateInterval->days + 1;
+
+                // Calculate the new leave balance
+                $newLeaveBalance = $leaveBalance - $numberOfDays; 
+
+                // Update the leave balance in the User entity
+                $submitter->setLeaveBalance($newLeaveBalance);
+
+                // Persist changes to the database
+                $this->entityManager->persist($submitter);
+                $this->entityManager->flush();
             } else  //request from technoical Director or Other roles
             {
                 $submitter = $data->getEmpolyee();

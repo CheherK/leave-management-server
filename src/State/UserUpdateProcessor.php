@@ -21,8 +21,7 @@ class UserUpdateProcessor implements ProcessorInterface
     public function process($data, Operation $operation, array $uriVariables = [], array $context = [])
     {
         //hashing password before persisting data
-        if ($data instanceof User) {
-            dump('hashing the password');
+        if ($data instanceof User && $data->getPassword() != null) {
             $plainPassword = $data->getPassword();
             $hashedPassword = $this->passwordEncoder->hashPassword($data, $plainPassword);
             $data->setPassword($hashedPassword);

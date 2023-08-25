@@ -36,9 +36,13 @@ class LeaveRequestUpdateProcessor implements ProcessorInterface
             'leaveRequest' => $data
         ]);
         $subject = '';
-        switch($mailTemplate) {
-            case "requestAccepted": $subject = "ImpactDev News: Demande de Congé Acceptée!"; break;
-            case "requestRejected": $subject = "ImpactDev News: Demande de Congé Refusée!"; break;
+        switch ($mailTemplate) {
+            case "requestAccepted":
+                $subject = "ImpactDev News: Demande de Congé Acceptée!";
+                break;
+            case "requestRejected":
+                $subject = "ImpactDev News: Demande de Congé Refusée!";
+                break;
         }
         $email = (new Email())
             ->from("impactdev3@gmail.com")
@@ -55,9 +59,32 @@ class LeaveRequestUpdateProcessor implements ProcessorInterface
             $status = $data->getStatus();
             $submitter = $data->getEmpolyee();
             $destination = $submitter->getEmail();
+            $userRepository = $this->entityManager->getRepository(User::class);
             if ($priority == 1) //final decision tooked by RH
             {
                 if ($status == 'accepted') {
+                    $leaveBalance = $submitter->getLeaveBalance();
+
+                    $startDateString = $data->getStartDate();
+                    $endDateString = $data->getEndDate();
+
+                    // Convert the start and end date strings to DateTime objects
+                    $startDate = \DateTime::createFromFormat('d-m-Y', $startDateString);
+                    $endDate = \DateTime::createFromFormat('d-m-Y', $endDateString);
+
+                    $dateInterval = $startDate->diff($endDate);
+                    $numberOfDays = $dateInterval->days + 1;
+
+                    // Calculate the new leave balance
+                    $newLeaveBalance = $leaveBalance - $numberOfDays;
+
+                    // Update the leave balance in the User entity
+                    $submitter->setLeaveBalance($newLeaveBalance);
+
+                    // Persist changes to the database
+                    $this->entityManager->persist($submitter);
+                    $this->entityManager->flush();
+
                     $this->sendMail($data, $submitter, $destination, "requestAccepted");
                 }
                 if ($status == 'rejected') {
@@ -71,7 +98,6 @@ class LeaveRequestUpdateProcessor implements ProcessorInterface
                     $data->setStatus("pending"); // Set the status to "Pending" because it will be awaiting action from RH
 
                     //get the RH mail
-                    $userRepository = $this->entityManager->getRepository(User::class);
                     $criteria = 'ROLE_RH';
                     $usersToInform = $userRepository->findAll();
                     foreach ($usersToInform as $user) {
@@ -83,7 +109,7 @@ class LeaveRequestUpdateProcessor implements ProcessorInterface
                 }
                 if ($status == 'rejected') //request refused => inform user
                 {
-                    $this->sendMail($data, $user, $destination, "requestRejected");
+                    $this->sendMail($data, $submitter, $destination, "requestRejected");
                 }
             }
         }
